@@ -18,21 +18,35 @@ Can we predict the probability of crimes in Vancouver?
 
 
 #### Data Sources
-- Crime statistics: https://vpd.ca/crime-statistics/
+- Crime statistics: https://vpd.ca/crime-statistics/. The downloaded data comes with a documentation:
+    - The data is to be updated every Sunday morning, with a possible delay of 1 week.
+    - The data begins in 2003.
+
 - 2021 Census – Boundary files: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
+    - Reference Guide: https://www150.statcan.gc.ca/n1/pub/92-160-g/92-160-g2021002-eng.htm
+
 
 Since most files are over GitHub's file size limit, we can't upload them here.
 
 
 #### Methodology
-First, we extract the data from the two data sources and combine them via the use of GeoDataFrames. 
-In particular, we build small spatial blocks and temporal blocks of our crima data:
- - Our spatial blocks are defined at the dissemination block level based on the 2021 Census – Boundary files.
- - Our temporal locks are defined as one day.
- 
-For each spatio-temporal block, we create a boolean on whether or not a crime happened. This is our target variable.
-A rich exploratory data analysis is performed, among others, studying the most common crimes and analyzing the crime distribution by neighborhood.
-We use random forests to predict class probabilities (probability that crime will happen). 
+First, a rich exploratory data analysis of the crime data is performed, among others, studying the most common crimes and analyzing the crime distribution by neighborhood.
+Then, we combine the two data sources via the use of GeoDataFrames. In particular, we build small spatial blocks and temporal blocks of our crima data. 
+Our spatial blocks are defined at the dissemination block level based on the 2021 Census – Boundary files. 
+We create two different datasets based on two different levels of temporal blocks:
+ a) Temporal blocks are defined as one day.
+ b) The above temporal blocks are further refined as part of the day (early morning, late morning, afternoon, and night).
+
+For each spatio-temporal block, we create a boolean on whether or not a crime happened. This is our target variable, which is imbalanced and in case b) highly imbalanced. 
+More exploratory data analysis is performed on the combined data.
+
+For the task of prediction, we restrict our datasets to the Central Business District, as this neighbourhood has by far the highest amount of reported crimes.
+We use three different types of models to predict class probabilities (probability that crime will happen) for each of the two datasets:
+ 1. Random Forest
+ 2. XGBoost (eXtreme Gradient Boosting)
+ 3. Dense Neural Network
+
+We tune hyperparameters for Random Forest and XGBoost. We also explore oversampling as well as threshold tuning for all three model types.
 
 
 #### Results
@@ -51,30 +65,41 @@ We use random forests to predict class probabilities (probability that crime wil
 
 
 **Prediction**
-- We choose to predict crime in the `Central Business District` as it has by far the highest amount of reported crimes.
-- Random Forest with the best parameters yields the following scores on the test set:
-    - AUC: 0.722
-    - Balanced accuracy: 0.653
-    - Accuracy: 0.735
-    - Recall: 0.488
-    - Average precision: 0.362
-    - Specificity: 0.819
-- The dissemination block is the most important feature. Season and weekday seem not to be important.
+- XGBoost and Random Forest (both with hyperparameter optimization) yield similar best results. Though XGBoost is slightly outperforming Random Forest.
+- The best XGBoost model yields the following scores on the test set:
+    - ROC AUC: 76.1%
+    - Balanced accuracy: 69.8%
+    - Accuracy: 73.9%
+    - Recall: 61.6%
+    - Average precision: 39.7%
+    - Specificity: 78.1%
+    - F1: 54.4%
+
+- XGBoost and Random Forest (both with hyperparameter optimization) outperform the Dense Neural Network (without hyperparameter optimization).
+- The dissemination block is the most important feature. Year is the second most important feature. Weekday, day, month, and the part of the day have quite lower importance. Season is not very important.
+
+
 
 
 
 #### Next Steps
 In the future, we plan to:
-- use time series analysis to determine long-term changes and seasonal components of crime
 - incorporate the location of [police stations](https://vpd.ca/community/community-policing-centres/)
 - analyze the relationship between demographic, social, and economic neighborhood characteristics and the spatial distribution of crime
+- use time series analysis to determine long-term changes and seasonal components of crime
+- analyze over-/under-sampling
+- forecast the time series using Convolutional Neural Networks, Recurrent Neural Networks, and Long Short-Term Memory Networks
+- use the KerasTuner for hyperparameter optimization
+- explain the models with SHAP values
 - apply the [Cynet model](https://pypi.org/project/cynet/)
 
 
 
 #### Outline of Project
-- [predict_crimes_Vancouver.ipynb](https://github.com/jessi88/crimes/blob/main/predict_crimes_Vancouver.ipynb)
-
+- [EDA and Data Preparation](https://github.com/jessi88/crimes/blob/main/predict_crimes_Vancouver_eda.ipynb)
+- [Random Forest](https://github.com/jessi88/crimes/blob/main/predict_crimes_Vancouver_random_forest.ipynb)
+- [XGBoost](https://github.com/jessi88/crimes/blob/main/predict_crimes_Vancouver_xgboost.ipynb)
+- [Dense Neural Network](https://github.com/jessi88/crimes/blob/main/predict_crimes_Vancouver_neural_network.ipynb)
 
 
 ##### Contact and Further Information
